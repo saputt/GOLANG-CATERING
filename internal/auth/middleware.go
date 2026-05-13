@@ -3,10 +3,14 @@ package auth
 import (
 	"catering-api/internal/httpx"
 	"context"
+	"encoding/json"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type contextKey string
@@ -84,4 +88,35 @@ func AdminOnly(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func RateLimiter(rdb *redis.Client, limit int, duration time.Duration) func(http.Handler) http.Handler {
+	return func (next http.Handler) http.Handler  {
+		return http.HandlerFunc(func (w http.ResponseWriter, r *http.Request)  {
+			ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+			key := "rate_limit:" + ip
+
+			count, err := rdb.Incr(r.Context(), key).Result()
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			if count == 1 {
+				rdb.Expire(r.Context(), key, duration)
+			}
+
+			if count > int64(limit) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusTooManyRequests)
+
+				json.NewEncoder(w).Encode(map[string]string{
+					"error" : "Too many requests dude",
+				})
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

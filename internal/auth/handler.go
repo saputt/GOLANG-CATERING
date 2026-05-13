@@ -4,23 +4,27 @@ import (
 	"catering-api/internal/httpx"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/redis/go-redis/v9"
 )
 
 type Handler struct {
 	service *Service
+	rdb *redis.Client
 }
 
-func NewHandler(service *Service) *Handler {
+func NewHandler(service *Service, rdb *redis.Client) *Handler {
 	return &Handler{
 		service: service,
+		rdb : rdb,
 	}
 }
 
 func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
-		r.Post("/login", h.Login)
+		r.With(RateLimiter(h.rdb, 2, time.Minute)).Post("/login", h.Login)
 		r.Post("/register", h.Register)
 	})
 }

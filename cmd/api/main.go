@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/redis/go-redis/v9"
 )
 
 func main(){
@@ -35,9 +36,13 @@ func main(){
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+
 	authRepo := auth.NewRepository(db)
 	authService := auth.NewService(authRepo, cfg.JWTSecret, cfg.JWTExpiresHour)
-	authHandler := auth.NewHandler(authService)
+	authHandler := auth.NewHandler(authService, rdb)
 
 	authHandler.RegisterRoutes(r)
 

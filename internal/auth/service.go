@@ -72,7 +72,6 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (LoginResponse, e
 	if err != nil {
 		return LoginResponse{}, ErrInvalidCredential
 	}
-
 	
 	token, err := s.generateToken(user)
 	fmt.Println(err)
