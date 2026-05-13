@@ -112,8 +112,8 @@ catering-api/
 
 **1. Clone the repository**
 ```bash
-git clone [https://github.com/username/catering-api.git](https://github.com/username/catering-api.git)
-cd catering-api
+git clone https://github.com/saputt/GOLANG-CATERING.git
+cd GOLANG-CATERING
 
 ```
 
